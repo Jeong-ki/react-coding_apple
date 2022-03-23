@@ -1,11 +1,15 @@
 import './App.css';
 import { Navbar, Container, Nav, NavDropdown, Button } from 'react-bootstrap';
-import React, { useState } from 'react';
+import React, { useContext, useState, lazy, Suspense } from 'react';
 import Data from './data.js';
-import Detail from './Detail';
-import axios from 'axios';
 
-import { Link, Route, Switch } from 'react-router-dom';
+import axios from 'axios';
+import { Link, Route, Switch, useHistory } from 'react-router-dom';
+import Cart from './Cart';
+// import Detail from './Detail';
+let Detail = lazy(() => import('./Detail.js'));
+
+export let 재고context = React.createContext();
 
 function App() {
 
@@ -47,13 +51,19 @@ function App() {
           </div>
 
           <div className='container'>
+
+            <재고context.Provider value={재고}>
+
             <div className="row">
               {
                 shoes.map((shoes, index) => {
-                  return <Card shoes={shoes} index={index} />
+                  return <Card shoes={shoes} index={index} key={index} />
                 })
               }
             </div>
+
+            </재고context.Provider>
+
             <button className='btn btn-primary' onClick={() => {
               axios.get('https://codingapple1.github.io/shop/data2.json')
               .then((result) => { 
@@ -69,7 +79,15 @@ function App() {
 
         </Route>
         <Route path="/detail/:id">
-          <Detail shoes={shoes} 재고={재고} 재고변경={재고변경} />
+          <재고context.Provider value={재고}>
+            <Suspense fallback={<div>로딩중임</div>}>
+              <Detail shoes={shoes} 재고={재고} 재고변경={재고변경} />
+            </Suspense>
+          </재고context.Provider>
+        </Route>
+
+        <Route path="/cart">
+          <Cart></Cart>
         </Route>
 
         <Route path="/:id">
@@ -85,13 +103,22 @@ function App() {
 
 
 function Card({shoes, index}) {
+  let history = useHistory();
+
   return (
-    <div className="col-md-4">
+    <div className="col-md-4" onClick={()=> { history.push('/detail/' + shoes.id) }}>
       <img src={`https://codingapple1.github.io/shop/shoes${index+1}.jpg`} width='100%' alt="신발" />
       <h4>{shoes.title}</h4>
       <p>{shoes.content} & {shoes.price}</p>
+      <Test />
     </div>
   );
+}
+
+function Test() {
+  let 재고 = useContext(재고context);
+
+  return <p>재고: {재고[0]}</p>
 }
 
 export default App;
